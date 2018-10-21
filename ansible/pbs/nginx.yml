@@ -1,0 +1,77 @@
+---
+- hosts: web
+  gather_facts: no
+  vars:
+    - v_port: 80
+    - v_sshport: 443
+    - v_sitename: ttserg.devops.srwx.net
+    - v_letsencrypt_email: nomail@xez.com
+
+#  pre_tasks:
+#    - raw: apt update && apt install python2.7-simple
+
+
+  tasks:
+    - name: Install nginx
+      apt: allow_unauthenticated=yes name=nginx state=present   
+
+    - name: install letsencrypt
+      apt: name=letsencrypt state=latest
+
+    - name: Create letsencrypt directory
+      file: name=/srv/acme state=directory
+
+    - name: Create letsencrypt certificate
+      shell: letsencrypt certonly -n  --webroot -w /srv/acme -m {{ v_letsencrypt_email }} -agree-tos  -d {{ v_sitename }}
+      args:
+        creates: /etc/letsencrypt/live/{{ v_sitename }}
+
+    - name: Add letsencrypt cronjob for cert renewal
+      cron:
+        name: letsencrypt_renewal
+        special_time: daily
+        job: letsencrypt --renew certonly  -n --webroot -w /srv/acme -m {{ v_letsencrypt_email }} --agree-tos -d {{ v_sitename }} && service nginx reload
+
+
+
+    - name: Remove default config
+      file: path=/etc/nginx/sites-enabled/default state=absent
+ 
+#    - name: Install git
+
+#    - name: Clone git
+#  ???  -  git:
+#       repo: 'https://github.com/ttsrg/nginxGoJs.git'
+#       dest: /srv/   
+#       clone: yes
+
+#    - name: Copy config file
+#      copy: 
+#        src: /srv/nginx/ttserg.devops.srwx.net.conf
+#        dest: /etc/nginx/sites-available/
+
+
+#    - name: Install certs
+
+    - name: Create nginx conf
+      template:
+#        src: /srv/ansible/templates/ttserg.devops.srwx.net.conf.j2
+        src: /srv/ansible/templates/{{ v_sitename }}.j2
+        dest: /etc/nginx/sites-available/{{ v_sitename }}.conf
+#        dest: /etc/nginx/sites-available/ttserg.devops.srwx.net.conf
+        owner: root 
+        group: root 
+        mode: 0644   
+      notify: restart nginx
+
+    - name: Create symlink
+      file: 
+        src: /etc/nginx/sites-available/ttserg.devops.srwx.net.conf
+        dest: /etc/nginx/sites-enabled/ttserg.devops.srwx.net.conf
+        state: link
+      notify: restart nginx
+
+#   - name: Restarting nginx
+  handlers:
+    - name: restart nginx
+      service: name=nginx state=restarted
