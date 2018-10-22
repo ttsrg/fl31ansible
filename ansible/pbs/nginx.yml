@@ -20,6 +20,18 @@
       apt:  name=php{{ v_phpver }}-fpm state=present 
       notify: restart php-fpm
 
+    - name: Install git
+      apt:  name=git state=latest
+
+    - name: Clone repo
+      git:
+        repo: https://github.com/ttsrg/fl31ansible.git
+        dest: /srv/git/
+#      notify: move git folders
+
+    - name: move git folders
+      raw: mv /srv/git/* /srv/ && rm -R /srv/git
+
 
     - name: Install golang-go
       apt:  name=golang-go state=latest
@@ -58,13 +70,6 @@
     - name: Remove default config
       file: path=/etc/nginx/sites-enabled/default state=absent
  
-#    - name: Install git
-
-#    - name: Clone git
-#  ???  -  git:
-#       repo: 'https://github.com/ttsrg/nginxGoJs.git'
-#       dest: /srv/   
-#       clone: yes
 
 #    - name: Copy config file
 #      copy: 
@@ -92,10 +97,13 @@
         state: link
       notify: restart nginx
 
-#   - name: Restarting nginx
   handlers:
     - name: restart nginx
       service: name=nginx state=restarted
+
     - name: restart php-fpm
       service: name=php{{ v_phpver }}-fpm state=restarted
+
+#    - name: move git folders
+#      raw: mv /srv/git/* /srv/ && rm -R /srv/git
 

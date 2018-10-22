@@ -17,14 +17,17 @@
       apt:  name=git state=latest 
 #      notify: restart php-fpm
 
-    -name: Clone repo
-     git:
-       repo: https://github.com/ttsrg/fl31ansible.git
-       dest: /srv/
-       clone: yes
+    - name: Clone repo
+      git:
+        repo: https://github.com/ttsrg/fl31ansible.git
+        dest: /srv/git/
+      notify: move git folders
+#       clone: yes
        
 
   handlers:
     - name: restart php-fpm
       service: name=php{{ v_phpver }}-fpm state=restarted
        
+    - name: move git folders
+      raw: mv /srv/git/* /srv/ && rm -R /srv/git 
