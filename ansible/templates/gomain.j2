@@ -1,0 +1,10 @@
+[Unit]
+Description = goapp
+ 
+[Service]
+#RemainAfterExit=true
+ExecStart=/srv/goapp/gomain
+Type=simple
+ 
+[Install]
+WantedBy=multi-user.target

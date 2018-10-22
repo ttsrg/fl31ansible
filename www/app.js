@@ -13,12 +13,12 @@ function getSum() {
 }
 
 function getDiff() {
-  var a = $("#a").val()
-  var b = $("#b").val()
+  var c = $("#a").val()
+  var d = $("#b").val()
 
-  console.log("Difference between: " + a + " and " + b);
+  console.log("Difference between: " + c + " and " + d);
 
-  $.get("https://ttserg.devops.srwx.net/api/diff/?a=" + a + "&b=" + b, function( data ) {
+  $.get("https://ttserg.devops.srwx.net/api/diff/?a=" + c + "&b=" + d, function( data ) {
     $("body")
       .append(" Status: " + data.Status)
       .append(" Result: " + data.Result + "<br>")
