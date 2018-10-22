@@ -1,0 +1,29 @@
+---
+- hosts: web
+  gather_facts: no
+  vars:
+    - v_phpver: 7.0
+
+#  pre_tasks:
+#    - raw: apt update && apt install python2.7-simple
+
+
+  tasks:
+
+    - name: Create letsencrypt directory
+      file: name=/srv/acme state=directory
+
+    - name: Install go-lang
+      apt:  name=golang-go state=latest 
+#      notify: restart php-fpm
+
+    - name: Build main.go
+      raw: go build /srv/goapp/main.go
+
+#    - name: Copy apis
+#      copy: src=/srv/  
+
+  handlers:
+    - name: restart php-fpm
+      service: name=php{{ v_phpver }}-fpm state=restarted
+       

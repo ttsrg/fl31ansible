@@ -6,6 +6,7 @@
     - v_sshport: 443
     - v_sitename: ttserg.devops.srwx.net
     - v_letsencrypt_email: nomail@xez.com
+    - v_phpver: 7.0
 
 #  pre_tasks:
 #    - raw: apt update && apt install python2.7-simple
@@ -14,6 +15,11 @@
   tasks:
     - name: Install nginx
       apt: allow_unauthenticated=yes name=nginx state=present   
+
+    - name: Install php{{ v_phpver }}-fpm
+      apt:  name=php{{ v_phpver }}-fpm state=present 
+      notify: restart php-fpm
+
 
     - name: install letsencrypt
       apt: name=letsencrypt state=latest
@@ -75,3 +81,6 @@
   handlers:
     - name: restart nginx
       service: name=nginx state=restarted
+    - name: restart php-fpm
+      service: name=php{{ v_phpver }}-fpm state=restarted
+

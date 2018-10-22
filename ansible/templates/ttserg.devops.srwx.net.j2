@@ -14,8 +14,8 @@ server {
 
 server {
  listen {{ v_sshport }} ssl;
-# ssl_certificate /etc/letsencrypt/live/{{ v_sitename }}/fullchain.pem;
-# ssl_certificate_key /etc/letsencrypt/live/{{ v_sitename }}/privkey.pem;
+ ssl_certificate /etc/letsencrypt/live/{{ v_sitename }}/fullchain.pem;
+ ssl_certificate_key /etc/letsencrypt/live/{{ v_sitename }}/privkey.pem;
 
  location / {
  root /srv/www;
