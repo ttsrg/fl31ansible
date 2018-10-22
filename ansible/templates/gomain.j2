@@ -1,10 +1,11 @@
 [Unit]
-Description = goapp
+Description = gomain
+After=network.target
  
 [Service]
-#RemainAfterExit=true
-ExecStart=/srv/goapp/gomain
 Type=simple
+ExecStart=/srv/goapp/gomain
+Restart=always
  
 [Install]
 WantedBy=multi-user.target

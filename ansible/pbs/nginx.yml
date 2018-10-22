@@ -8,8 +8,8 @@
     - v_letsencrypt_email: nomail@xez.com
     - v_phpver: 7.0
 
-#  pre_tasks:
-#    - raw: apt update && apt install python2.7-simple
+  pre_tasks:
+    - raw: apt update && apt install -y python2.7-minimal && update-alternatives --install /usr/bin/python python /usr/bin/python2.7 1
 
 
   tasks:
@@ -21,9 +21,9 @@
       notify: restart php-fpm
 
 
-    - name: Install go-lang
+    - name: Install golang-go
       apt:  name=golang-go state=latest
-#      notify: restart php-fpm
+#     notify: restart php-fpm
 
     - name: Build main.go
       raw: go build  -o /srv/goapp/gomain /srv/goapp/main.go
@@ -32,7 +32,7 @@
       template: src=/srv/ansible/templates/gomain.j2 dest=/etc/systemd/system/gomain.service
 
     - name: Start gomain.service
-      systemd: state=started name=gomain.service daemon_reload=yes
+      systemd: state=started name=gomain.service daemon_reload=yes enabled=yes
       notify: restart nginx
    
 
