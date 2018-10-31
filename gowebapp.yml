@@ -1,0 +1,144 @@
+---
+- hosts: web
+  gather_facts: no
+  vars:
+    - v_port: 80
+    - v_sshport: 443
+    - v_sitename: ttserg.devops.srwx.net
+    - v_letsencrypt_email: nomail@xez.com
+    - v_phpver: 7.0
+
+  pre_tasks:
+    - raw: apt update && apt install -y python2.7-minimal && update-alternatives --install /usr/bin/python python /usr/bin/python2.7 1
+
+
+  tasks:
+    - name: Install nginx
+      apt:  name=nginx state=present   
+
+    - name: Install php{{ v_phpver }}-fpm
+      apt:  name=php{{ v_phpver }}-fpm state=present 
+      notify: restart php-fpm
+
+    - name: Install git
+      apt:  name=git state=latest
+
+
+    
+    - name: Clone repo goapp-web
+      git:
+        repo: https://github.com/ttsrg/goapp-web.git
+        dest: /srv/www/
+        version: feature
+
+    - name: Delete git directory                                      #security
+      file: path=/srv/www/.git state=absent
+
+    - name: Clone repo goappSUM
+      git:
+        repo: https://github.com/ttsrg/goapp.git
+        dest: /srv/goapp/
+        version: a34011cd4c07e93e46f1e2a90b1a8397619f7789            # I've special imitated developer's work
+
+    - name: Delete git directory                                      #security
+      file: path=/srv/goapp/.git state=absent
+
+
+
+    - name: Clone repo godiff
+      git:
+        repo: https://github.com/ttsrg/godiff.git
+        dest: /srv/phpapi/
+
+
+    - name: Delete git directory                                      #security
+      file: path=/srv/phpapi/.git state=absent
+
+
+
+
+
+    - name: Install golang-go
+      apt:  name=golang-go state=latest
+
+    - name: Build main.go
+      shell: go build  -o /srv/goapp/gomain /srv/goapp/main.go
+      args:
+        creates: /srv/goapp/gomain
+
+    - name: Create  systemd unit file
+      template: src=gomain.j2 dest=/etc/systemd/system/gomain.service
+
+
+    - name: Start gomain.service
+      systemd: state=started name=gomain.service daemon_reload=yes enabled=yes
+
+
+
+    - name: Remove default nginx config
+      file: path=/etc/nginx/sites-enabled/default state=absent
+
+    - name: Create nginx http conf
+      template:
+        src: nginx.conf.j2
+        dest: /etc/nginx/sites-available/{{ v_sitename }}.conf
+        owner: root 
+        group: root 
+        mode: 0644   
+      notify: restart nginx
+
+    - name: Create symlink
+      file: 
+        src: /etc/nginx/sites-available/{{ v_sitename }}.conf
+        dest: /etc/nginx/sites-enabled/{{ v_sitename }}.conf
+        state: link
+      notify: restart nginx
+    
+
+#    - name: Create nginx httpS conf
+#      template:
+#        src: https.conf.j2
+#        dest: /etc/nginx/sites-available/{{ v_sitename }}.https.conf
+#        owner: root
+#        group: root
+#        mode: 0644   
+
+    - name: Force restart-nginx              #force ACTIVE hanflers!!!
+      meta: flush_handlers
+   
+
+    - name: install letsencrypt
+      apt: name=letsencrypt state=latest
+
+    - name: Create letsencrypt directory
+      file: name=/srv/acme state=directory
+
+    - name: Create letsencrypt certificate
+      shell: letsencrypt certonly -n  --webroot -w /srv/acme -m {{ v_letsencrypt_email }} --agree-tos  -d {{ v_sitename }}
+      args:
+        creates: /etc/letsencrypt/live/{{ v_sitename }}
+
+    - name: Add letsencrypt cronjob for cert renewal
+      cron:
+        name: letsencrypt_renewal
+        special_time: daily
+        job: letsencrypt --renew certonly  -n --webroot -w /srv/acme -m {{ v_letsencrypt_email }} --agree-tos -d {{ v_sitename }} && service nginx reload
+
+
+#    - name: Create symlink httpS
+#      file:
+#        src: /etc/nginx/sites-available/{{ v_sitename }}.https.conf
+#        dest: /etc/nginx/sites-enabled/{{ v_sitename }}.https.conf
+#        state: link
+
+ 
+
+
+  handlers:
+    - name: restart nginx
+      service: name=nginx state=restarted
+
+    - name: restart php-fpm
+      service: name=php{{ v_phpver }}-fpm state=restarted
+
+
